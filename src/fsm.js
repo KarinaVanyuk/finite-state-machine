@@ -4,11 +4,12 @@ class FSM {
      * @param config
      */
     constructor(config) {
-    	this.states=config.states;
-    	this.initial=config.initial;
-    	this.currentState=config.initial;
-    	this.history=[this.initial]
-    	this.allState=0;
+    	this.states = config.states;
+    	this.initial = config.initial;
+    	this.currentState = config.initial;
+    	this.history = [this.initial]
+    	this.allState = 0;
+    	this.redoState = []
     }
 
     /**
@@ -24,9 +25,10 @@ class FSM {
      * @param state
      */
     changeState(state) {
-    	if (this.states[state]!= undefined) {
-    		this.currentState=state;
+    	if (this.states[state] != undefined) {
+    		this.currentState = state;
     		this.history.push(state);
+    		this.redoState = [];
     		this.allState++;
 
     	}
@@ -40,27 +42,26 @@ class FSM {
      * @param event
      */
     trigger(event) {
-    const state=['normal','busy', 'hungry', 'sleeping' ];
-    let b=this.currentState 
-    for (var i = 0; i < state.length; i++) {
-    	let a=this.states[state[i]].transitions;
-          
-            if (event in a) {
-            	
-            	this.currentState = a[event];
-            }
-               }
-           
+    let b = this.currentState 
+var a = this.states[b]. transitions[event]
+		if(a){
+			this.currentState = this.states[b].transitions[event];
+			this.history.push(this.currentState);
+			this.allState++;
+			this.redoState = [];
 
-
-    }
+		}
+		else {
+			throw new Exception("Нет такого состояния");
+		}
+}
 
     /**
      * Resets FSM state to initial.
      */
     reset() {
-    	this.currentState=this.initial;
-    	this.allState=0;
+    	this.currentState = this.initial;
+    	this.allState = 0;
     }
 
     /**
@@ -70,8 +71,8 @@ class FSM {
      * @returns {Array}
      */
     getStates(event) {
-    	const arr=[];
-    	const state=['normal','busy', 'hungry', 'sleeping' ];
+    	const arr = [];
+    	const state = ['normal','busy', 'hungry', 'sleeping' ];
     	if (event === undefined) {
     		return state
     	}
@@ -94,9 +95,11 @@ class FSM {
      * @returns {Boolean}
      */
     undo() {
-    	if (this.allState!=0) {
-    		this.currentState=this.history[this.allState-1];
+
+    	if (this.allState !== 0) {
+    		this.currentState = this.history[this.allState-1];
     		this.allState--;
+    		this.redoState.push(this.currentState)
     		 return true;
     	}
     	else{
@@ -111,13 +114,14 @@ class FSM {
      * @returns {Boolean}
      */
     redo() {
-    	if (this.allState!=this.history.length-1) {
-    		this.currentState=this.history[this.allState+1];
-    		this.allState++;
-    		 return true;
+    	if (this.redoState.length < 1 ) {
+    		return false
     	}
     	else{
-    		return false
+    		this.currentState = this.history[this.allState+1];
+    		this.allState++;
+    		this.redoState.length--;
+    		 return true;
     	}
     }
 
@@ -125,7 +129,10 @@ class FSM {
      * Clears transition history
      */
     clearHistory() {
+    	this.redoState = [];
+    	this.allState = 0;
     	this.history.length = 1;
+
     }
 }
 
